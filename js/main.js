@@ -93,4 +93,83 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     });
   });
+
+  // ---- Scroll-reveal + animated counters (lightweight, no dependencies) ----
+  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  function animateCount(el) {
+    var target = parseFloat(el.getAttribute('data-count'));
+    var prefix = el.getAttribute('data-prefix') || '';
+    var suffix = el.getAttribute('data-suffix') || '';
+    if (isNaN(target)) return;
+    if (reduceMotion) { el.textContent = prefix + target + suffix; return; }
+    var start = null;
+    var duration = 1200;
+    function step(ts) {
+      if (!start) start = ts;
+      var progress = Math.min((ts - start) / duration, 1);
+      var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      var value = Math.round(target * eased);
+      el.textContent = prefix + value + suffix;
+      if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+  }
+
+  if ('IntersectionObserver' in window) {
+    var revealObserver = new IntersectionObserver(function (entries, obs) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+
+    document.querySelectorAll('.reveal, .reveal-stagger').forEach(function (el) {
+      revealObserver.observe(el);
+    });
+
+    var countObserver = new IntersectionObserver(function (entries, obs) {
+      entries.forEach(function (entry) {
+        if (entry.isIntersecting) {
+          animateCount(entry.target);
+          obs.unobserve(entry.target);
+        }
+      });
+    }, { threshold: 0.4 });
+
+    document.querySelectorAll('.num[data-count]').forEach(function (el) {
+      countObserver.observe(el);
+    });
+  } else {
+    // Fallback: no IntersectionObserver support — just show everything immediately
+    document.querySelectorAll('.reveal, .reveal-stagger').forEach(function (el) { el.classList.add('visible'); });
+    document.querySelectorAll('.num[data-count]').forEach(function (el) {
+      el.textContent = (el.getAttribute('data-prefix') || '') + el.getAttribute('data-count') + (el.getAttribute('data-suffix') || '');
+    });
+  }
+
+  // ---- Floating "Contact Us" button — appears after scrolling past the hero ----
+  var floatingCta = document.getElementById('floating-cta');
+  if (floatingCta) {
+    var heroEl = document.querySelector('.hero, .page-hero');
+    var threshold = heroEl ? heroEl.offsetTop + heroEl.offsetHeight * 0.6 : 400;
+    var ticking = false;
+    function updateFloatingCta() {
+      if (window.scrollY > threshold) {
+        floatingCta.classList.add('show');
+      } else {
+        floatingCta.classList.remove('show');
+      }
+      ticking = false;
+    }
+    window.addEventListener('scroll', function () {
+      if (!ticking) {
+        requestAnimationFrame(updateFloatingCta);
+        ticking = true;
+      }
+    });
+    updateFloatingCta();
+  }
 });
