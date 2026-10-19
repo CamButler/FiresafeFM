@@ -1,114 +1,100 @@
-// Fire Safe FM — shared front-end behaviour
+(function () {
+  "use strict";
 
-document.addEventListener('DOMContentLoaded', function () {
-
-  // Mobile nav toggle
-  var toggle = document.querySelector('.nav-toggle');
-  var nav = document.querySelector('.main-nav');
-  if (toggle && nav) {
-    toggle.addEventListener('click', function () {
-      var isOpen = nav.classList.toggle('open');
-      toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
-    });
-    nav.querySelectorAll('a').forEach(function (link) {
-      link.addEventListener('click', function () { nav.classList.remove('open'); });
+  /* ---- Mobile nav toggle ---- */
+  var navToggle = document.querySelector(".nav-toggle");
+  var mainNav = document.querySelector(".main-nav");
+  if (navToggle && mainNav) {
+    navToggle.addEventListener("click", function () {
+      var open = mainNav.classList.toggle("open");
+      navToggle.setAttribute("aria-expanded", open ? "true" : "false");
     });
   }
 
-  // FAQ accordion
-  document.querySelectorAll('.faq-item').forEach(function (item) {
-    var q = item.querySelector('.faq-q');
-    if (!q) return;
-    q.addEventListener('click', function () {
-      var wasOpen = item.classList.contains('open');
-      document.querySelectorAll('.faq-item.open').forEach(function (other) {
-        other.classList.remove('open');
-        other.querySelector('.faq-q').setAttribute('aria-expanded', 'false');
-      });
-      if (!wasOpen) {
-        item.classList.add('open');
-        q.setAttribute('aria-expanded', 'true');
+  /* ---- Mega-menu tap-toggle on mobile ---- */
+  document.querySelectorAll(".has-dropdown > a").forEach(function (a) {
+    a.addEventListener("click", function (e) {
+      if (window.matchMedia("(max-width:900px)").matches) {
+        e.preventDefault();
+        var li = a.parentElement;
+        var wasOpen = li.classList.contains("open");
+        document.querySelectorAll(".has-dropdown.open").forEach(function (el) { el.classList.remove("open"); });
+        if (!wasOpen) li.classList.add("open");
       }
     });
   });
 
-  // Quote / contact form submission
-  var form = document.getElementById('quote-form');
+  /* ---- FAQ accordion ---- */
+  document.querySelectorAll(".faq-item").forEach(function (item) {
+    var q = item.querySelector(".faq-q");
+    if (!q) return;
+    q.addEventListener("click", function () {
+      var wasOpen = item.classList.contains("open");
+      document.querySelectorAll(".faq-item.open").forEach(function (el) { el.classList.remove("open"); el.querySelector(".faq-q").setAttribute("aria-expanded", "false"); });
+      if (!wasOpen) {
+        item.classList.add("open");
+        q.setAttribute("aria-expanded", "true");
+      }
+    });
+  });
+
+  /* ---- Contact form ---- */
+  var form = document.getElementById("quote-form");
   if (form) {
-    var statusEl = document.getElementById('form-status');
-    // Point this at your deployed backend, e.g. https://api.firesafefm.uk/api/contact
-    var ENDPOINT = form.getAttribute('data-endpoint') || '/api/contact';
-
-    form.addEventListener('submit', function (e) {
+    var statusEl = document.getElementById("form-status");
+    form.addEventListener("submit", function (e) {
       e.preventDefault();
-
-      // Honeypot spam check — real users never fill this hidden field
-      if (form.querySelector('[name="company_website"]').value) {
+      if (form.company_website && form.company_website.value) {
+        // Honeypot triggered — silently pretend success.
+        statusEl.textContent = "Thanks — we'll be in touch shortly.";
+        statusEl.className = "form-status ok";
+        form.reset();
         return;
       }
-
-      var submitBtn = form.querySelector('button[type="submit"]');
-      var originalLabel = submitBtn.textContent;
+      var endpoint = form.getAttribute("data-endpoint") || "/api/contact";
+      var submitBtn = form.querySelector("button[type=submit]");
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Sending...';
-      statusEl.textContent = '';
-      statusEl.className = 'form-status';
-
-      // Uses FormData (not JSON) so file attachments under "photos" travel with it
-      var formData = new FormData(form);
-
-      fetch(ENDPOINT, {
-        method: 'POST',
-        body: formData
-      })
-        .then(function (res) {
-          if (!res.ok) throw new Error('Request failed');
-          return res.json();
-        })
-        .then(function () {
-          statusEl.textContent = "Thanks — your enquiry has been sent. We'll be in touch shortly.";
-          statusEl.className = 'form-status ok';
-          form.reset();
+      submitBtn.textContent = "Sending…";
+      statusEl.textContent = "";
+      statusEl.className = "form-status";
+      fetch(endpoint, { method: "POST", body: new FormData(form) })
+        .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
+        .then(function (result) {
+          if (result.ok) {
+            statusEl.textContent = "Thanks — your enquiry has been sent. We'll be in touch shortly.";
+            statusEl.className = "form-status ok";
+            form.reset();
+          } else {
+            statusEl.textContent = (result.data && result.data.error) || "Something went wrong — please call or email us directly.";
+            statusEl.className = "form-status err";
+          }
         })
         .catch(function () {
-          statusEl.textContent = 'Something went wrong sending your enquiry. Please call us on 07427 606 008 or email info@firesafefm.uk directly.';
-          statusEl.className = 'form-status err';
+          statusEl.textContent = "Couldn't send your enquiry — please call " + "us or email us directly.";
+          statusEl.className = "form-status err";
         })
         .finally(function () {
           submitBtn.disabled = false;
-          submitBtn.textContent = originalLabel;
+          submitBtn.textContent = "Send Enquiry";
         });
     });
   }
 
-  // Mega-menu dropdowns: hover on desktop (CSS handles it), tap-to-toggle on mobile
-  document.querySelectorAll('.has-dropdown > a').forEach(function (link) {
-    link.addEventListener('click', function (e) {
-      if (window.matchMedia('(max-width: 900px)').matches) {
-        e.preventDefault();
-        var parent = link.parentElement;
-        var wasOpen = parent.classList.contains('open');
-        document.querySelectorAll('.has-dropdown.open').forEach(function (el) { el.classList.remove('open'); });
-        if (!wasOpen) parent.classList.add('open');
-      }
-    });
-  });
-
-  // ---- Scroll-reveal + animated counters (lightweight, no dependencies) ----
-  var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
+  /* ---- Count-up stat animation ---- */
   function animateCount(el) {
-    var target = parseFloat(el.getAttribute('data-count'));
-    var prefix = el.getAttribute('data-prefix') || '';
-    var suffix = el.getAttribute('data-suffix') || '';
-    if (isNaN(target)) return;
-    if (reduceMotion) { el.textContent = prefix + target + suffix; return; }
-    var start = null;
+    var target = parseFloat(el.getAttribute("data-count"));
+    var prefix = el.getAttribute("data-prefix") || "";
+    var suffix = el.getAttribute("data-suffix") || "";
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      el.textContent = prefix + target + suffix;
+      return;
+    }
     var duration = 1200;
+    var start = null;
     function step(ts) {
       if (!start) start = ts;
       var progress = Math.min((ts - start) / duration, 1);
-      var eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      var eased = 1 - Math.pow(1 - progress, 3);
       var value = Math.round(target * eased);
       el.textContent = prefix + value + suffix;
       if (progress < 1) requestAnimationFrame(step);
@@ -116,21 +102,21 @@ document.addEventListener('DOMContentLoaded', function () {
     requestAnimationFrame(step);
   }
 
-  if ('IntersectionObserver' in window) {
+  /* ---- Scroll reveal ---- */
+  var revealEls = document.querySelectorAll(".reveal, .reveal-stagger");
+  var numEls = document.querySelectorAll(".num[data-count]");
+  if ("IntersectionObserver" in window) {
     var revealObserver = new IntersectionObserver(function (entries, obs) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
-          entry.target.classList.add('visible');
+          entry.target.classList.add("visible");
           obs.unobserve(entry.target);
         }
       });
-    }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
+    }, { threshold: 0.15 });
+    revealEls.forEach(function (el) { revealObserver.observe(el); });
 
-    document.querySelectorAll('.reveal, .reveal-stagger').forEach(function (el) {
-      revealObserver.observe(el);
-    });
-
-    var countObserver = new IntersectionObserver(function (entries, obs) {
+    var numObserver = new IntersectionObserver(function (entries, obs) {
       entries.forEach(function (entry) {
         if (entry.isIntersecting) {
           animateCount(entry.target);
@@ -138,38 +124,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }
       });
     }, { threshold: 0.4 });
-
-    document.querySelectorAll('.num[data-count]').forEach(function (el) {
-      countObserver.observe(el);
-    });
+    numEls.forEach(function (el) { numObserver.observe(el); });
   } else {
-    // Fallback: no IntersectionObserver support — just show everything immediately
-    document.querySelectorAll('.reveal, .reveal-stagger').forEach(function (el) { el.classList.add('visible'); });
-    document.querySelectorAll('.num[data-count]').forEach(function (el) {
-      el.textContent = (el.getAttribute('data-prefix') || '') + el.getAttribute('data-count') + (el.getAttribute('data-suffix') || '');
-    });
+    revealEls.forEach(function (el) { el.classList.add("visible"); });
+    numEls.forEach(animateCount);
   }
 
-  // ---- Floating "Contact Us" button — appears after scrolling past the hero ----
-  var floatingCta = document.getElementById('floating-cta');
-  if (floatingCta) {
-    var heroEl = document.querySelector('.hero, .page-hero');
-    var threshold = heroEl ? heroEl.offsetTop + heroEl.offsetHeight * 0.6 : 400;
+  /* ---- Floating CTA show/hide ---- */
+  var floatingCta = document.getElementById("floating-cta");
+  var heroEl = document.querySelector(".hero, .page-hero");
+  if (floatingCta && heroEl) {
+    var threshold = heroEl.offsetTop + heroEl.offsetHeight * 0.6;
     var ticking = false;
-    function updateFloatingCta() {
-      if (window.scrollY > threshold) {
-        floatingCta.classList.add('show');
-      } else {
-        floatingCta.classList.remove('show');
-      }
-      ticking = false;
-    }
-    window.addEventListener('scroll', function () {
+    window.addEventListener("scroll", function () {
       if (!ticking) {
-        requestAnimationFrame(updateFloatingCta);
+        requestAnimationFrame(function () {
+          if (window.scrollY > threshold) {
+            floatingCta.classList.add("show");
+          } else {
+            floatingCta.classList.remove("show");
+          }
+          ticking = false;
+        });
         ticking = true;
       }
     });
-    updateFloatingCta();
   }
-});
+})();
