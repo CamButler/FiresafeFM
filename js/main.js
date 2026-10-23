@@ -24,6 +24,31 @@
     });
   });
 
+  /* ---- Dimmed backdrop behind an open mega-menu (desktop hover + mobile
+     tap), so the dropdown reads as a deliberate overlay rather than a
+     layout glitch. ---- */
+  var dropdownItems = document.querySelectorAll(".has-dropdown");
+  var navBackdrop = document.querySelector(".nav-backdrop");
+  if (dropdownItems.length && navBackdrop) {
+    dropdownItems.forEach(function (li) {
+      li.addEventListener("mouseenter", function () {
+        if (!window.matchMedia("(max-width:960px)").matches) document.body.classList.add("dropdown-open");
+      });
+      li.addEventListener("mouseleave", function () {
+        if (!window.matchMedia("(max-width:960px)").matches) document.body.classList.remove("dropdown-open");
+      });
+    });
+    var mo = new MutationObserver(function () {
+      var anyOpen = document.querySelector(".has-dropdown.open");
+      document.body.classList.toggle("dropdown-open", !!anyOpen);
+    });
+    dropdownItems.forEach(function (li) { mo.observe(li, { attributes: true, attributeFilter: ["class"] }); });
+    navBackdrop.addEventListener("click", function () {
+      document.querySelectorAll(".has-dropdown.open").forEach(function (el) { el.classList.remove("open"); });
+      document.body.classList.remove("dropdown-open");
+    });
+  }
+
   /* ---- FAQ accordion ---- */
   document.querySelectorAll(".faq-item").forEach(function (item) {
     var q = item.querySelector(".faq-q");
