@@ -119,8 +119,8 @@ a:focus-visible, button:focus-visible, input:focus-visible, textarea:focus-visib
   opacity: 0; pointer-events: none; transition: opacity 0.15s ease; z-index: 40;
 }
 body.dropdown-open .nav-backdrop { opacity: 1; pointer-events: auto; }
-.dropdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; }
-.dropdown-grid a { display: block; padding: 9px 0; font-size: 0.9rem; font-weight: 500; color: var(--ink-900); border-bottom: 1px solid var(--paper-100); }
+.dropdown-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 20px; min-width: 0; }
+.dropdown-grid a { display: block; padding: 9px 0; font-size: 0.9rem; font-weight: 500; color: var(--ink-900); border-bottom: 1px solid var(--paper-100); white-space: normal; min-width: 0; }
 .dropdown-grid a:hover { color: var(--red-500); }
 .dropdown-viewall { display: block; margin-top: 14px; font-weight: 700; color: var(--red-500); font-size: 0.86rem; }
 
