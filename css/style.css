@@ -456,3 +456,13 @@ body.dropdown-open .nav-backdrop { opacity: 1; pointer-events: auto; }
   .hero h1 { font-size: 2rem; }
   .footer-bottom { flex-direction: column; }
 }
+
+/* Dropdown panel links: must beat the white nav-link rule */
+.main-nav nav .dropdown-grid a { color: var(--ink); padding: 10px 0; display: block; font-weight: 600; font-size: .92rem; box-shadow: none; }
+.main-nav nav .dropdown-grid a:hover, .main-nav nav .dropdown-grid a[aria-current="page"] { color: var(--red); box-shadow: none; }
+.main-nav nav .dropdown-viewall { color: var(--red); display: block; box-shadow: none; padding: 0; font-weight: 800; font-size: .9rem; }
+.main-nav nav .dropdown-grid a, .main-nav nav .dropdown-viewall { white-space: normal; min-width: 0; }
+.main-nav nav .dropdown-panel { flex-direction: column; }
+.main-nav nav .has-dropdown:hover .dropdown-panel { display: block; }
+.main-nav nav a.dropdown-viewall:not(.btn) { color: var(--red); display: block; box-shadow: none; padding: 0; margin-top: 14px; font-weight: 800; font-size: .9rem; }
+.main-nav nav a.dropdown-viewall:not(.btn):hover { color: var(--navy); box-shadow: none; }
