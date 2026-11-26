@@ -81,11 +81,18 @@
       }
       var endpoint = form.getAttribute("data-endpoint") || "/api/inspection-request";
       var submitBtn = form.querySelector("button[type=submit]");
+      var origBtn = submitBtn.innerHTML;
       submitBtn.disabled = true;
       submitBtn.textContent = "Sending…";
       statusEl.textContent = "";
       statusEl.className = "form-status";
-      fetch(endpoint, { method: "POST", body: new FormData(form) })
+      // The design has a single "Phone or Email" field; send it to the backend
+      // as whichever of the two it looks like.
+      var fd = new FormData(form);
+      var contact = (fd.get("contact") || "").toString().trim();
+      fd.delete("contact");
+      if (contact.indexOf("@") !== -1) { fd.set("email", contact); } else { fd.set("telephone", contact); }
+      fetch(endpoint, { method: "POST", body: fd })
         .then(function (res) { return res.json().then(function (data) { return { ok: res.ok, data: data }; }); })
         .then(function (result) {
           if (result.ok) {
@@ -103,8 +110,22 @@
         })
         .finally(function () {
           submitBtn.disabled = false;
-          submitBtn.textContent = "Request an Inspection";
+          submitBtn.innerHTML = origBtn;
         });
+    });
+  }
+
+  /* ---- Our Work filter chips ---- */
+  var chips = document.querySelectorAll(".chip[data-filter]");
+  if (chips.length) {
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        var f = chip.getAttribute("data-filter");
+        chips.forEach(function (c) { c.classList.toggle("active", c === chip); });
+        document.querySelectorAll(".work-card").forEach(function (card) {
+          card.hidden = !(f === "all" || card.getAttribute("data-cat") === f);
+        });
+      });
     });
   }
 
